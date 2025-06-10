@@ -117,12 +117,39 @@ impl StudioState {
 
     pub fn export(&self) {
         let mut content = String::new();
+
+        let mut min_x = f32::MAX;
+        let mut min_y = f32::MAX;
+        let mut max_x = f32::MIN;
+        let mut max_y = f32::MIN;
+        for i in &self.stack {
+            match i.value {
+                StudioValues::Circle { center, radius } => {
+                    min_x = min_x.min(center.x - radius);
+                    min_y = min_y.min(center.y - radius);
+                    max_x = max_x.max(center.x + radius);
+                    max_y = max_y.max(center.y + radius);
+                }
+                _ => {}
+            }
+        }
+        let width = max_x - min_x;
+        let height = max_y - min_y;
+
+        content.push_str(&format!(
+            "draw_rectangle_lines({:.1}, {:.1}, {:.1}, {:.1}, 1.2, {:?});\n",
+            0.0, 0.0, width, height, YELLOW
+        ));
+
         for i in self.stack.iter() {
             let color = i.color;
             match i.value {
                 StudioValues::Circle { center, radius } => content.push_str(&format!(
                     "draw_circle({:.1}, {:.1}, {:.1}, {:?});\n",
-                    center.x, center.y, radius, color,
+                    center.x - min_x,
+                    center.y - min_y,
+                    radius,
+                    color,
                 )),
                 _ => content.push_str(""),
             }
