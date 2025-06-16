@@ -3,10 +3,10 @@ use macroquad::prelude::mouse_position;
 use macroquad::prelude::screen_height;
 use macroquad::prelude::screen_width;
 use macroquad::prelude::Color;
+use macroquad::prelude::DrawRectangleParams;
 use macroquad::prelude::Vec2;
 use macroquad::prelude::WHITE;
 use macroquad::prelude::YELLOW;
-use macroquad::shapes::draw_circle;
 
 use super::StudioButtons;
 use super::StudioElement;
@@ -130,6 +130,37 @@ impl StudioState {
                     max_x = max_x.max(center.x + radius);
                     max_y = max_y.max(center.y + radius);
                 }
+                StudioValues::Rectangle {
+                    point,
+                    width,
+                    height,
+                    rotation,
+                } => {
+                    let hw = width / 2.0;
+                    let hh = height / 2.0;
+                    let cos_r = rotation.cos();
+                    let sin_r = rotation.sin();
+
+                    let corners = [
+                        Vec2::new(-hw, -hh),
+                        Vec2::new(hw, -hh),
+                        Vec2::new(hw, hh),
+                        Vec2::new(-hw, hh),
+                    ];
+
+                    for corner in corners.iter() {
+                        let rotated = Vec2::new(
+                            corner.x * cos_r - corner.y * sin_r,
+                            corner.x * sin_r + corner.y * cos_r,
+                        );
+                        let world = point + rotated;
+
+                        min_x = min_x.min(world.x);
+                        min_y = min_y.min(world.y);
+                        max_x = max_x.max(world.x);
+                        max_y = max_y.max(world.y);
+                    }
+                }
                 _ => {}
             }
         }
@@ -151,6 +182,26 @@ impl StudioState {
                     radius,
                     color,
                 )),
+                StudioValues::Rectangle {
+                    width,
+                    height,
+                    rotation,
+                    point,
+                } => {
+                    let params = DrawRectangleParams {
+                        offset: Vec2::new(0.0, 0.0),
+                        rotation,
+                        color,
+                    };
+                    content.push_str(&format!(
+                        "draw_rectangle_ex({:.1}, {:.1}, {:.1}, {:.1}, {:?});\n",
+                        point.x - min_x,
+                        point.y - min_y,
+                        width,
+                        height,
+                        params,
+                    ));
+                }
                 _ => content.push_str(""),
             }
         }

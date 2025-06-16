@@ -197,6 +197,67 @@ impl StudioElements {
                         }
                     }
                 }
+                StudioValues::Rectangle {
+                    width,
+                    height,
+                    rotation,
+                    point,
+                } => {
+                    let hw = width / 2.0;
+                    let hh = height / 2.0;
+
+                    // Corners before rotation
+                    let mut corners = [
+                        Vec2::new(-hw, -hh),
+                        Vec2::new(hw, -hh),
+                        Vec2::new(hw, hh),
+                        Vec2::new(-hw, hh),
+                    ];
+
+                    // Apply rotation and translate to actual position
+                    for corner in &mut corners {
+                        *corner = Vec2::new(
+                            corner.x * rotation.cos() - corner.y * rotation.sin(),
+                            corner.x * rotation.sin() + corner.y * rotation.cos(),
+                        ) + point;
+                    }
+
+                    // Draw highlight points if mouse is near corners or center
+                    let mut highlight = false;
+                    for corner in &corners {
+                        if position.distance(*corner) <= SIZE_POINT {
+                            highlight = true;
+                            break;
+                        }
+                    }
+                    if position.distance(point) <= SIZE_POINT {
+                        highlight = true;
+                    }
+
+                    if highlight {
+                        draw_circle_lines(point.x, point.y, SIZE_POINT, 1.0, color);
+                    }
+
+                    if state.snap {
+                        // Snap to center
+                        if (position.x - point.x).abs() < SIZE_POINT {
+                            draw_line(point.x, 0.0, point.x, height, 1.0, color);
+                        }
+                        if (position.y - point.y).abs() < SIZE_POINT {
+                            draw_line(0.0, point.y, width, point.y, 1.0, color);
+                        }
+
+                        // Snap to corners
+                        for corner in &corners {
+                            if (position.x - corner.x).abs() < SIZE_POINT {
+                                draw_line(corner.x, 0.0, corner.x, height, 1.0, color);
+                            }
+                            if (position.y - corner.y).abs() < SIZE_POINT {
+                                draw_line(0.0, corner.y, width, corner.y, 1.0, color);
+                            }
+                        }
+                    }
+                }
                 _ => {}
             }
         }
